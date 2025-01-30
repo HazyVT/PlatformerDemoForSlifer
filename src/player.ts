@@ -149,7 +149,7 @@ class Player {
                     new Vector2(this.size.x, 8)
                 );
 
-        if (this.yvel < 4) {
+        if (this.yvel < 10) {
             this.yvel += this.gravity;
         }
         if (this.current_sprite >= this.walkImages.length) {
