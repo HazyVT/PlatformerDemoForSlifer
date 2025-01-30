@@ -1,8 +1,5 @@
 {
     "layer": {
-        "draworder": "topdown",
-        "id": 2,
-        "name": "Collisions",
         "objects": [
             {
                 "height": 160,
@@ -22,8 +19,8 @@
                 "rotation": 0,
                 "type": "",
                 "visible": true,
-                "width": 300,
-                "x": 0,
+                "width": 184,
+                "x": 16,
                 "y": 136
             },
             {
@@ -36,12 +33,51 @@
                 "width": 16,
                 "x": 200,
                 "y": 0
+            },
+            {
+                "height": 8,
+                "id": 6,
+                "name": "",
+                "rotation": 0,
+                "type": "",
+                "visible": true,
+                "width": 40,
+                "x": 40,
+                "y": 104
+            },
+            {
+                "height": 8,
+                "id": 7,
+                "name": "",
+                "rotation": 0,
+                "type": "",
+                "visible": true,
+                "width": 24,
+                "x": 88,
+                "y": 56
+            },
+            {
+                "height": 8,
+                "id": 8,
+                "name": "",
+                "rotation": 0,
+                "type": "",
+                "visible": true,
+                "width": 24,
+                "x": 104,
+                "y": 88
+            },
+            {
+                "height": 8,
+                "id": 9,
+                "name": "",
+                "rotation": 0,
+                "type": "",
+                "visible": true,
+                "width": 24,
+                "x": 152,
+                "y": 72
             }
-        ],
-        "opacity": 1,
-        "type": "objectgroup",
-        "visible": true,
-        "x": 0,
-        "y": 0
+        ]
     }
 }

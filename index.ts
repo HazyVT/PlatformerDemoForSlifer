@@ -5,9 +5,8 @@ import * as map from "./map.json";
 const window = Slifer.createWindow("Game", new Vector2(640, 480));
 
 const mapimage = Slifer.Graphics.loadImage("./art/map.png");
-const mappos = new Vector2(0, 0);
 
-Player.position = new Vector2(100, 100);
+Player.position = new Vector2(140, 50);
 Player.size = new Vector2(8 * 3, 8 * 3);
 Player.load();
 
@@ -27,46 +26,26 @@ map.layer.objects.forEach((object) => {
 while (!Slifer.shouldClose()) {
     Slifer.Graphics.setBackground(black);
     Player.update(Slifer.dt);
+
     Player.rect = new Rectangle(Player.position, Player.size);
     //Slifer.Graphics.drawRect(Player.rect, blue);
 
     Player.draw();
 
+    //Slifer.Graphics.drawRect(groundedRect, red);
+
     objects.forEach((rect) => {
         //Slifer.Graphics.drawRect(rect, red);
 
-        if (Player.rect.isColliding(rect)) {
-            // My position is greater than rect x
-            // My position + size is greater than rect x
-            // My posiiton + size is less than rect x
-            if (
-                Player.position.x + Player.size.x > rect.position.x &&
-                Player.position.x < rect.position.x
-            ) {
-                Player.position.x = rect.position.x - Player.size.x;
-                console.log("Right");
-            }
+        Player.checkForGrounded(rect);
 
-            if (
-                Player.position.x < rect.position.x + rect.size.x &&
-                Player.position.x + Player.size.x >
-                    rect.position.x + rect.size.x
-            ) {
-                Player.position.x = rect.position.x + rect.size.x;
-                console.log("Left");
-            }
-
-            if (
-                Player.position.y + Player.size.y > rect.position.y &&
-                Player.position.y < rect.position.y
-            ) {
-                Player.position.y = rect.position.y - Player.size.y;
-                Player.isGrounded = true;
-            }
-        }
+        Player.checkVerticalColl(rect);
+        Player.checkHorizontalColl(rect);
     });
 
-    Slifer.Graphics.drawEx(mapimage, mappos, 0, new Vector2(3, 3));
+    Player.position.x += Player.xvel;
+
+    Slifer.Graphics.drawEx(mapimage, new Vector2(0, 0), 0, new Vector2(3, 3));
 
     Slifer.Graphics.render();
 }

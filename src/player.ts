@@ -5,6 +5,15 @@ class Player {
     public static size: Vector2;
     public static rect: Rectangle;
     public static isGrounded = false;
+    public static xvel = 0;
+    public static yvel = 0;
+    public static collisions = new Map([
+        ["up", false],
+        ["down", false],
+        ["right", false],
+        ["left", false],
+    ]);
+    public static speed = 2;
 
     private static walkImages: Image[] = [];
     private static idleImage: Image;
@@ -14,9 +23,10 @@ class Player {
     private static animating: boolean = true;
     private static animation: string;
     private static flip = false;
-    private static speed = 20;
-    private static gravity = 16;
-    private static yvel = 0;
+    private static gravity = 0.2;
+    private static jumpSpeed = 5;
+
+    private static groundedRect: Rectangle;
 
     public static load() {
         this.idleImage = Slifer.Graphics.loadImage("./art/Sir-BC_stop.png");
@@ -47,36 +57,88 @@ class Player {
         );
 
         this.image = this.idleImage;
+        this.groundedRect = new Rectangle(
+            new Vector2(this.position.x, this.position.y + this.size.y),
+            new Vector2(this.size.x, 4)
+        );
+    }
+
+    public static checkForGrounded(rect: Rectangle) {
+        if (this.groundedRect.isColliding(rect)) {
+            this.isGrounded = true;
+            this.yvel =
+                Number(Slifer.Keyboard.isPressed("space")) * -this.jumpSpeed;
+        }
+    }
+
+    public static checkVerticalColl(rect: Rectangle) {
+        const yvelRect = new Rectangle(
+            this.position,
+            new Vector2(this.size.x, this.size.y + this.yvel)
+        );
+
+        if (yvelRect.isColliding(rect)) {
+            const yvelSignRect = new Rectangle(
+                this.position,
+                new Vector2(this.size.x, this.size.y + Math.sign(this.yvel))
+            );
+
+            if (yvelSignRect.isColliding(rect)) {
+                this.position.y += Math.sign(this.yvel);
+            }
+
+            this.yvel = 0;
+        }
+    }
+
+    public static checkHorizontalColl(rect: Rectangle) {
+        const xvelRect = new Rectangle(
+            this.position,
+            new Vector2(this.size.x + this.xvel, this.size.y)
+        );
+
+        if (xvelRect.isColliding(rect)) {
+            const xvelSignRect = new Rectangle(
+                this.position,
+                new Vector2(this.size.x + Math.sign(this.xvel), this.size.y)
+            );
+
+            if (xvelSignRect.isColliding(rect)) {
+                this.position.x += Math.sign(this.xvel);
+            }
+
+            this.xvel = 0;
+        }
     }
 
     public static update(dt: number) {
-        if (this.animating) this.current_sprite += 0.2;
+        if (this.animating) this.current_sprite += 0.25;
+
+        this.groundedRect = new Rectangle(
+            new Vector2(this.position.x, this.position.y + this.size.y),
+            new Vector2(this.size.x, 4)
+        );
 
         if (this.current_sprite >= this.walkImages.length - 1) {
             this.current_sprite = 0;
         }
 
-        var xm =
+        var move =
             Number(Slifer.Keyboard.isDown("d")) -
             Number(Slifer.Keyboard.isDown("a"));
 
-        this.chooseAnimation(xm);
+        this.xvel = move * this.speed;
+
+        this.chooseAnimation(this.xvel);
 
         if (this.yvel < 10) {
-            this.yvel += this.gravity * dt;
+            this.yvel += this.gravity;
         }
+    }
 
-        if (this.isGrounded) {
-            this.yvel = 0;
-            if (Slifer.Keyboard.isPressed("space")) {
-                this.isGrounded = false;
-                this.yvel = -this.speed * 10 * dt;
-                this.animation = "jump";
-            }
-        }
-
-        this.position.x += xm * this.speed * dt;
-        this.position.y += this.yvel * dt;
+    public static updatePosition() {
+        this.position.x += this.xvel;
+        this.position.y += this.yvel;
     }
 
     private static animate() {
