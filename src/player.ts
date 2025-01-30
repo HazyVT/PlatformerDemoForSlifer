@@ -1,5 +1,8 @@
 import Slifer, { Image, Vector2, Rectangle } from "slifer";
 
+const red = Slifer.Graphics.makeColor(255, 0, 0, 10);
+
+
 class Player {
     public static position: Vector2;
     public static size: Vector2;
@@ -57,69 +60,99 @@ class Player {
         );
 
         this.image = this.idleImage;
+		        this.rect = new Rectangle(
+        	new Vector2(this.position.x, this.position.y),
+        	new Vector2(this.size.x, this.size.y)
+        );
+
         this.groundedRect = new Rectangle(
-            new Vector2(this.position.x, this.position.y + this.size.y),
-            new Vector2(this.size.x, 4)
+            new Vector2(this.rect.position.x, this.rect.position.y + this.rect.size.y -1),
+            new Vector2(this.rect.size.x, 1)
         );
     }
 
     public static checkForGrounded(rect: Rectangle) {
         if (this.groundedRect.isColliding(rect)) {
-            this.isGrounded = true;
             this.yvel =
                 Number(Slifer.Keyboard.isPressed("space")) * -this.jumpSpeed;
+
+            if (this.xvel != 0) {
+            	if (this.xvel > 0) this.flip = true;
+                            if (this.xvel < 0) this.flip = false;
+            
+                            //console.log(this.position);
+            
+                            this.animation = "move";
+                            this.animating = true;
+                            this.image = this.walkImages[Math.floor(this.current_sprite)];
+                        } else {
+                            this.animation = "idle";
+                            this.current_sprite = 0;
+                            this.animating = false;
+                            this.image = this.idleImage;
+                        }
         }
+
+		
     }
 
     public static checkVerticalColl(rect: Rectangle) {
-        const yvelRect = new Rectangle(
-            this.position,
-            new Vector2(this.size.x, this.size.y + this.yvel)
-        );
+		const yvelRect = new Rectangle(
+	            new Vector2(this.rect.position.x, this.rect.position.y + this.yvel),
+	            new Vector2(this.rect.size.x, this.rect.size.y)
+	        );
 
         if (yvelRect.isColliding(rect)) {
-            const yvelSignRect = new Rectangle(
-                this.position,
-                new Vector2(this.size.x, this.size.y + Math.sign(this.yvel))
-            );
-
-            if (yvelSignRect.isColliding(rect)) {
-                this.position.y += Math.sign(this.yvel);
-            }
-
-            this.yvel = 0;
-        }
+                    const yvelSignRect = new Rectangle(
+                        new Vector2(this.rect.position.x, this.rect.position.y  + Math.sign(this.yvel)),
+                        new Vector2(this.rect.size.x, this.rect.size.y)
+                    );
+        
+                    if (!yvelSignRect.isColliding(rect)) {
+                        this.rect.position.y += Math.sign(this.yvel);
+                    }
+        
+                    this.yvel = 0;
+                    
+                }
     }
 
     public static checkHorizontalColl(rect: Rectangle) {
         const xvelRect = new Rectangle(
-            this.position,
-            new Vector2(this.size.x + this.xvel, this.size.y)
+            new Vector2(this.rect.position.x + this.xvel, this.rect.position.y),
+            new Vector2(this.rect.size.x, this.rect.size.y)
         );
+
+        //Slifer.Graphics.drawRect(xvelRect, red);
+
 
         if (xvelRect.isColliding(rect)) {
             const xvelSignRect = new Rectangle(
-                this.position,
-                new Vector2(this.size.x + Math.sign(this.xvel), this.size.y)
+                new Vector2(this.rect.position.x + Math.sign(this.xvel), this.rect.position.y),
+                new Vector2(this.rect.size.x, this.rect.size.y)
             );
 
-            if (xvelSignRect.isColliding(rect)) {
-                this.position.x += Math.sign(this.xvel);
+            while (!xvelSignRect.isColliding(rect)) {
+                this.rect.position.x += Math.sign(this.xvel);
             }
 
             this.xvel = 0;
         }
+
     }
 
-    public static update(dt: number) {
+    public static update(dt: number, objects: Rectangle[]) {
         if (this.animating) this.current_sprite += 0.25;
 
         this.groundedRect = new Rectangle(
-            new Vector2(this.position.x, this.position.y + this.size.y),
-            new Vector2(this.size.x, 4)
-        );
+                    new Vector2(this.position.x, this.position.y + this.size.y - 4),
+                    new Vector2(this.size.x, 8)
+                );
 
-        if (this.current_sprite >= this.walkImages.length - 1) {
+        if (this.yvel < 4) {
+            this.yvel += this.gravity;
+        }
+        if (this.current_sprite >= this.walkImages.length) {
             this.current_sprite = 0;
         }
 
@@ -131,14 +164,23 @@ class Player {
 
         this.chooseAnimation(this.xvel);
 
-        if (this.yvel < 10) {
-            this.yvel += this.gravity;
-        }
+
+        objects.forEach((rect) => {
+        	this.checkForGrounded(rect);
+
+        	this.checkVerticalColl(rect);
+        	this.checkHorizontalColl(rect);
+        })
+
+        
+
+
+       this.updatePosition();
     }
 
     public static updatePosition() {
-        this.position.x += this.xvel;
-        this.position.y += this.yvel;
+        this.rect.position.x += this.xvel;
+        this.rect.position.y += this.yvel;
     }
 
     private static animate() {
@@ -146,36 +188,21 @@ class Player {
     }
 
     private static chooseAnimation(xm: number) {
-        if (this.isGrounded) {
-            if (xm != 0) {
-                if (xm == 1) this.flip = true;
-                if (xm == -1) this.flip = false;
-
-                //console.log(this.position);
-
-                this.animation = "move";
-                this.animating = true;
-                this.image = this.walkImages[Math.floor(this.current_sprite)];
-            } else {
-                this.animation = "idle";
-                this.current_sprite = 0;
-                this.animating = false;
-                this.image = this.idleImage;
-            }
-        } else {
-            this.animating = false;
-            this.image = this.jumpImage;
-        }
+		this.animation = "jump";
+		        	this.animating = false;
+		        	this.image = this.jumpImage;
     }
 
     public static draw() {
         Slifer.Graphics.drawEx(
             this.image,
-            this.position,
+            this.rect.position,
             0,
             new Vector2(3, 3),
             this.flip
         );
+
+        //Slifer.Graphics.drawRect(this.rect, red)
     }
 }
 
