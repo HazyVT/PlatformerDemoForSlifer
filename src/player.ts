@@ -1,7 +1,5 @@
-import Slifer, { Image, Vector2, Rectangle } from "slifer";
-
-const red = Slifer.Graphics.makeColor(255, 0, 0, 10);
-
+import Slifer, { type Image, Vector2, Rectangle } from "slifer";
+const physicsWorker = new Worker("./physics.ts");
 
 class Player {
     public static position: Vector2;
@@ -28,6 +26,7 @@ class Player {
     private static flip = false;
     private static gravity = 0.2;
     private static jumpSpeed = 5;
+    private static hasDouble = true;
 
     private static groundedRect: Rectangle;
 
@@ -60,13 +59,16 @@ class Player {
         );
 
         this.image = this.idleImage;
-		        this.rect = new Rectangle(
-        	new Vector2(this.position.x, this.position.y),
-        	new Vector2(this.size.x, this.size.y)
+        this.rect = new Rectangle(
+            new Vector2(this.position.x, this.position.y),
+            new Vector2(this.size.x, this.size.y)
         );
 
         this.groundedRect = new Rectangle(
-            new Vector2(this.rect.position.x, this.rect.position.y + this.rect.size.y -1),
+            new Vector2(
+                this.rect.position.x,
+                this.rect.position.y + this.rect.size.y - 1
+            ),
             new Vector2(this.rect.size.x, 1)
         );
     }
@@ -75,46 +77,47 @@ class Player {
         if (this.groundedRect.isColliding(rect)) {
             this.yvel =
                 Number(Slifer.Keyboard.isPressed("space")) * -this.jumpSpeed;
+            this.hasDouble = true;
 
             if (this.xvel != 0) {
-            	if (this.xvel > 0) this.flip = true;
-                            if (this.xvel < 0) this.flip = false;
-            
-                            //console.log(this.position);
-            
-                            this.animation = "move";
-                            this.animating = true;
-                            this.image = this.walkImages[Math.floor(this.current_sprite)];
-                        } else {
-                            this.animation = "idle";
-                            this.current_sprite = 0;
-                            this.animating = false;
-                            this.image = this.idleImage;
-                        }
-        }
+                if (this.xvel > 0) this.flip = true;
+                if (this.xvel < 0) this.flip = false;
 
-		
+                //console.log(this.position);
+
+                this.animation = "move";
+                this.animating = true;
+                this.image = this.walkImages[Math.floor(this.current_sprite)];
+            } else {
+                this.animation = "idle";
+                this.current_sprite = 0;
+                this.animating = false;
+                this.image = this.idleImage;
+            }
+        }
     }
 
     public static checkVerticalColl(rect: Rectangle) {
-		const yvelRect = new Rectangle(
-	            new Vector2(this.rect.position.x, this.rect.position.y + this.yvel),
-	            new Vector2(this.rect.size.x, this.rect.size.y)
-	        );
+        const yvelRect = new Rectangle(
+            new Vector2(this.rect.position.x, this.rect.position.y + this.yvel),
+            new Vector2(this.rect.size.x, this.rect.size.y)
+        );
 
         if (yvelRect.isColliding(rect)) {
-                    const yvelSignRect = new Rectangle(
-                        new Vector2(this.rect.position.x, this.rect.position.y  + Math.sign(this.yvel)),
-                        new Vector2(this.rect.size.x, this.rect.size.y)
-                    );
-        
-                    if (!yvelSignRect.isColliding(rect)) {
-                        this.rect.position.y += Math.sign(this.yvel);
-                    }
-        
-                    this.yvel = 0;
-                    
-                }
+            const yvelSignRect = new Rectangle(
+                new Vector2(
+                    this.rect.position.x,
+                    this.rect.position.y + Math.sign(this.yvel)
+                ),
+                new Vector2(this.rect.size.x, this.rect.size.y)
+            );
+
+            if (!yvelSignRect.isColliding(rect)) {
+                this.rect.position.y += Math.sign(this.yvel);
+            }
+
+            this.yvel = 0;
+        }
     }
 
     public static checkHorizontalColl(rect: Rectangle) {
@@ -125,10 +128,12 @@ class Player {
 
         //Slifer.Graphics.drawRect(xvelRect, red);
 
-
         if (xvelRect.isColliding(rect)) {
             const xvelSignRect = new Rectangle(
-                new Vector2(this.rect.position.x + Math.sign(this.xvel), this.rect.position.y),
+                new Vector2(
+                    this.rect.position.x + Math.sign(this.xvel),
+                    this.rect.position.y
+                ),
                 new Vector2(this.rect.size.x, this.rect.size.y)
             );
 
@@ -138,22 +143,26 @@ class Player {
 
             this.xvel = 0;
         }
-
     }
 
     public static update(dt: number, objects: Rectangle[]) {
         if (this.animating) this.current_sprite += 0.25;
 
         this.groundedRect = new Rectangle(
-                    new Vector2(this.position.x, this.position.y + this.size.y - 4),
-                    new Vector2(this.size.x, 8)
-                );
+            new Vector2(this.position.x, this.position.y + this.size.y - 4),
+            new Vector2(this.size.x, 8)
+        );
 
         if (this.yvel < 10) {
             this.yvel += this.gravity;
         }
         if (this.current_sprite >= this.walkImages.length) {
             this.current_sprite = 0;
+        }
+
+        if (this.yvel != 0 && Slifer.Keyboard.isPressed("space") && this.hasDouble) {
+            this.yvel = -this.jumpSpeed;
+            this.hasDouble = false;
         }
 
         var move =
@@ -164,18 +173,14 @@ class Player {
 
         this.chooseAnimation(this.xvel);
 
-
         objects.forEach((rect) => {
-        	this.checkForGrounded(rect);
+            this.checkForGrounded(rect);
 
-        	this.checkVerticalColl(rect);
-        	this.checkHorizontalColl(rect);
-        })
+            this.checkVerticalColl(rect);
+            this.checkHorizontalColl(rect);
+        });
 
-        
-
-
-       this.updatePosition();
+        this.updatePosition();
     }
 
     public static updatePosition() {
@@ -188,9 +193,9 @@ class Player {
     }
 
     private static chooseAnimation(xm: number) {
-		this.animation = "jump";
-		        	this.animating = false;
-		        	this.image = this.jumpImage;
+        this.animation = "jump";
+        this.animating = false;
+        this.image = this.jumpImage;
     }
 
     public static draw() {
