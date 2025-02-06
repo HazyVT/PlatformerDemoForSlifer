@@ -1,5 +1,5 @@
-import Slifer, { type Image, Vector2, Rectangle } from "slifer";
-const physicsWorker = new Worker("./physics.ts");
+import Slifer, { type Image, Vector2, Rectangle, AudioSource } from "slifer";
+import { approach } from './utils';
 
 class Player {
     public static position: Vector2;
@@ -17,8 +17,10 @@ class Player {
     public static speed = 2;
 
     private static walkImages: Image[] = [];
+    private static walkFrames = 8;
     private static idleImage: Image;
     private static jumpImage: Image;
+    private static fallImage: Image;
     private static current_sprite = 0;
     private static image: Image;
     private static animating: boolean = true;
@@ -26,37 +28,27 @@ class Player {
     private static flip = false;
     private static gravity = 0.2;
     private static jumpSpeed = 5;
+    private static xscale: number = 0;
+    private static yscale: number = 0;
     private static hasDouble = true;
+    private static jumpsfx: AudioSource;
 
     private static groundedRect: Rectangle;
 
     public static load() {
-        this.idleImage = Slifer.Graphics.loadImage("./art/Sir-BC_stop.png");
-        this.jumpImage = Slifer.Graphics.loadImage("./art/Sir-BC_jump.png");
+        this.idleImage = Slifer.Graphics.loadImage("./art/frogsir-idle.png");
+        this.jumpImage = Slifer.Graphics.loadImage("./art/frogsir-jump.png");
+        this.fallImage = Slifer.Graphics.loadImage("./art/frogsir-fall.png");
+        this.jumpsfx = Slifer.Audio.loadAudio("./sfx/jump.wav");
+		/*
         this.walkImages.push(
-            Slifer.Graphics.loadImage("./art/walk/Sir-BC_walk1.png")
+            Slifer.Graphics.loadImage("./art/walk/frogsir-walk1.png")
         );
-        this.walkImages.push(
-            Slifer.Graphics.loadImage("./art/walk/Sir-BC_walk2.png")
-        );
-        this.walkImages.push(
-            Slifer.Graphics.loadImage("./art/walk/Sir-BC_walk3.png")
-        );
-        this.walkImages.push(
-            Slifer.Graphics.loadImage("./art/walk/Sir-BC_walk4.png")
-        );
-        this.walkImages.push(
-            Slifer.Graphics.loadImage("./art/walk/Sir-BC_walk5.png")
-        );
-        this.walkImages.push(
-            Slifer.Graphics.loadImage("./art/walk/Sir-BC_walk6.png")
-        );
-        this.walkImages.push(
-            Slifer.Graphics.loadImage("./art/walk/Sir-BC_walk7.png")
-        );
-        this.walkImages.push(
-            Slifer.Graphics.loadImage("./art/walk/Sir-BC_walk8.png")
-        );
+        */
+        for (let i = 1; i < this.walkFrames+1; i++) {
+        	this.walkImages.push(Slifer.Graphics.loadImage(`./art/walk/frogsir-walk${i}.png`));
+        }
+       
 
         this.image = this.idleImage;
         this.rect = new Rectangle(
@@ -75,13 +67,25 @@ class Player {
 
     public static checkForGrounded(rect: Rectangle) {
         if (this.groundedRect.isColliding(rect)) {
+
+			if (this.yvel > 1) {
+				this.xscale = 1.2;
+			}
+
             this.yvel =
                 Number(Slifer.Keyboard.isPressed("space")) * -this.jumpSpeed;
             this.hasDouble = true;
 
+            if (Slifer.Keyboard.isPressed("space")) {
+            	this.jumpsfx.play();
+            	this.yscale = 2.2;
+            }
+
+            
+
             if (this.xvel != 0) {
-                if (this.xvel > 0) this.flip = true;
-                if (this.xvel < 0) this.flip = false;
+                if (this.xvel > 0) this.flip = false;
+                if (this.xvel < 0) this.flip = true;
 
                 //console.log(this.position);
 
@@ -137,7 +141,7 @@ class Player {
                 new Vector2(this.rect.size.x, this.rect.size.y)
             );
 
-            while (!xvelSignRect.isColliding(rect)) {
+            if (!xvelSignRect.isColliding(rect)) {
                 this.rect.position.x += Math.sign(this.xvel);
             }
 
@@ -163,13 +167,18 @@ class Player {
         if (this.yvel != 0 && Slifer.Keyboard.isPressed("space") && this.hasDouble) {
             this.yvel = -this.jumpSpeed;
             this.hasDouble = false;
+            this.jumpsfx.play();
         }
 
         var move =
             Number(Slifer.Keyboard.isDown("d")) -
             Number(Slifer.Keyboard.isDown("a"));
 
-        this.xvel = move * this.speed;
+        if (move != 0) {
+        	this.xvel = approach(this.xvel, this.speed * move, 0.4);
+        } else {
+        	this.xvel = approach(this.xvel, 0, 0.6);
+        }
 
         this.chooseAnimation(this.xvel);
 
@@ -181,6 +190,8 @@ class Player {
         });
 
         this.updatePosition();
+        this.xscale = approach(this.xscale, 0, 0.09);
+        this.yscale = approach(this.yscale, 0, 0.09);
     }
 
     public static updatePosition() {
@@ -193,21 +204,35 @@ class Player {
     }
 
     private static chooseAnimation(xm: number) {
-        this.animation = "jump";
-        this.animating = false;
-        this.image = this.jumpImage;
+    	if (this.yvel > 0) {
+    		this.animation = "fall";
+    		this.animating = false;
+    		this.image = this.fallImage;
+    	} else {
+    		this.animation = "jump";
+    		this.animating = false;
+    		this.image = this.jumpImage;
+    	}
     }
 
     public static draw() {
+    	const pos = new Vector2(this.rect.position.x - (1 + (this.xscale / 2)), this.rect.position.y - (1 + (this.yscale / 2)));
         Slifer.Graphics.drawEx(
             this.image,
-            this.rect.position,
+            pos,
             0,
-            new Vector2(3, 3),
+            new Vector2(
+            	2 + 1 + (this.xscale / 2), 
+            	2 + 1 + (this.yscale / 2)
+            ),
             this.flip
         );
 
         //Slifer.Graphics.drawRect(this.rect, red)
+    }
+
+    public static quit() {
+    	this.jumpsfx.destroy();
     }
 }
 

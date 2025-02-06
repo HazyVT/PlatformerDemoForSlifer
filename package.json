@@ -9,7 +9,7 @@
         "typescript": "^5.0.0"
     },
     "dependencies": {
-        "slifer": "^0.2.2"
+        "slifer": "^0.2.3"
     },
     "scripts": {
         "dev": "bun run index.ts"
