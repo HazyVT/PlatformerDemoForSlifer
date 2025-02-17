@@ -1,48 +1,12 @@
 import { Slifer, Font, Vector2, Image, Canvas, Cursor, Rectangle } from 'slifer';
 import { white, black } from '..';
 import Game, { File } from './game';
+import Dialogue from './dialogue'
 
 // 290, 155 , 330, 190
 // 286, 330, 330, 360 
 
-class Dialogue {
 
-	wRect: Rectangle;
-	bRect: Rectangle;
-	time: number;
-	dialogue: string;
-
-	private show = "";
-
-	constructor(dialogue: string) {
-		this.wRect = new Rectangle(
-			new Vector2(160, 20),
-			new Vector2(320, 60)
-		);
-
-		this.bRect = new Rectangle(
-			new Vector2(164, 24),
-			new Vector2(312, 52)
-		);
-		this.time = 0;
-		this.dialogue = dialogue;
-	}
-
-	update() {
-		this.time += Slifer.deltaTime * 4;
-
-		if (Math.floor(this.time) <= this.dialogue.length) {
-			this.show = this.dialogue.substring(0, Math.floor(this.time));	
-		}		
-	}
-
-	draw(font: Font) {
-		Slifer.Graphics.drawRect(this.wRect, white);
-		Slifer.Graphics.drawRect(this.bRect, black);
-		Slifer.Graphics.print(this.show, 168, 28, font, white);
-		
-	}
-}
 
 class Adv {
 
@@ -150,6 +114,15 @@ class Adv {
 					if (Slifer.Mouse.isPressed("left")) this.activeDialogue = new Dialogue("Where he kept me.");
 				}
 				
+				break;
+			case 3:
+				if (tx >= 8 && tx <= 10 && ty >= 2 && ty <= 4) {
+					Slifer.setCursor(this.upCurs);
+
+					if (Slifer.Mouse.isPressed('left')) {
+						this.pos.y -= 1;
+					}
+				}
 				break;
 		}
 
