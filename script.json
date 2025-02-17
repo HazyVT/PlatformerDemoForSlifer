@@ -1,0 +1,36 @@
+{
+	"EditorVersion": "3.0.0-dev1",
+	"RootNodeID": "SbKkBywi4I",
+	"ListNodes": [
+		{
+			"$type": "NodeRoot",
+			"ID": "SbKkBywi4I",
+			"NextID": -1,
+			"EditorPosition": {
+				"x": -520,
+				"y": -153
+			}
+		},
+		{
+			"$type": "NodeSentence",
+			"ID": "zrhnn4IPFc",
+			"NextID": -1,
+			"Speaker": "",
+			"DisplayName": "TERMINAL",
+			"DisplayVariant": "",
+			"Sentence": "",
+			"Voiceline": "",
+			"EditorPosition": {
+				"x": 6,
+				"y": -166
+			}
+		}
+	],
+	"Characters": [
+		{
+			"Reference": "TERMINAL",
+			"ID": 0
+		}
+	],
+	"Variables": []
+}
