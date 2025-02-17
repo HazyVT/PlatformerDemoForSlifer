@@ -1,5 +1,5 @@
 import { Slifer, Font, Color, Rectangle, Vector2, type keys } from 'slifer';
-import { files } from './files';
+import { white } from '..';
 import Game from './game';
 
 class Terminal {
@@ -17,7 +17,6 @@ class Terminal {
 		'x', 'y', 'z', '.' 
 	];
 	
-	private static white : Color = new Color(255, 255, 255, 255);
 	private static gray : Color = new Color(60, 60, 60, 255);
 	private static orange: Color = new Color(245, 123, 66, 255);
 	
@@ -45,7 +44,7 @@ class Terminal {
 				"open |FileName| - Open a text file",
 				"ls - List all files in directory",
 				"help - List's all commands",
-				"exit - closes the terminal",
+				"exit - closes the terminal"
 			]
 		}
 
@@ -53,7 +52,7 @@ class Terminal {
 			this.screenText = [
 				"VAULT TERMINAL HQ"
 			];
-			files.forEach((file) => {
+			Game.files.forEach((file) => {
 				if (file.location == this.currDirectory) {
 					this.screenText.push(`${file.name}.${file.fileType}`);
 				}
@@ -68,7 +67,7 @@ class Terminal {
 					"File name needs to be added"
 				]
 			} else {
-				files.forEach((file) => {
+				Game.files.forEach((file) => {
 					if (file.location == this.currDirectory) {
 						if (file.name == fileName) {
 							if (file.fileType != "exe") {
@@ -93,7 +92,7 @@ class Terminal {
 					"File name needs to be added"
 				]
 			} else {
-				files.forEach((file) => {
+				Game.files.forEach((file) => {
 					if (file.location == this.currDirectory) {
 						if (file.name == fileName) {
 							if (file.fileType != "txt") {
@@ -145,7 +144,7 @@ class Terminal {
 
 	static draw(font: Font) {
 		Slifer.Graphics.print("$", 32, 32 + (this.screenText.length * 18), font, this.orange);
-		Slifer.Graphics.print(this.playerType, 48, 32 + (this.screenText.length * 18), font, this.white);
+		Slifer.Graphics.print(this.playerType, 48, 32 + (this.screenText.length * 18), font, white);
 		this.cursor.position.y = 32 + (this.screenText.length * 18);
 
 		if (this.cursorState == "idle") {
@@ -160,7 +159,7 @@ class Terminal {
 		
 	
 		this.screenText.forEach((text, index) => {
-			Slifer.Graphics.print(text, 32, 32 + (index * 18), font, this.white)
+			Slifer.Graphics.print(text, 32, 32 + (index * 18), font, white)
 		})
 	}
 }

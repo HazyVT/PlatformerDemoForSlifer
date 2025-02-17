@@ -1,9 +1,48 @@
 import { Slifer, Font, Vector2, Image, Canvas, Cursor, Rectangle } from 'slifer';
-import { white } from '..';
+import { white, black } from '..';
+import Game, { File } from './game';
 
 // 290, 155 , 330, 190
 // 286, 330, 330, 360 
-// 176, 165, 235, 224 
+
+class Dialogue {
+
+	wRect: Rectangle;
+	bRect: Rectangle;
+	time: number;
+	dialogue: string;
+
+	private show = "";
+
+	constructor(dialogue: string) {
+		this.wRect = new Rectangle(
+			new Vector2(160, 20),
+			new Vector2(320, 60)
+		);
+
+		this.bRect = new Rectangle(
+			new Vector2(164, 24),
+			new Vector2(312, 52)
+		);
+		this.time = 0;
+		this.dialogue = dialogue;
+	}
+
+	update() {
+		this.time += Slifer.deltaTime * 4;
+
+		if (Math.floor(this.time) <= this.dialogue.length) {
+			this.show = this.dialogue.substring(0, Math.floor(this.time));	
+		}		
+	}
+
+	draw(font: Font) {
+		Slifer.Graphics.drawRect(this.wRect, white);
+		Slifer.Graphics.drawRect(this.bRect, black);
+		Slifer.Graphics.print(this.show, 168, 28, font, white);
+		
+	}
+}
 
 class Adv {
 
@@ -13,7 +52,9 @@ class Adv {
 	]
 	private static pos : Vector2 = new Vector2(0, 1);
 	private static hall: Image;
+	private static postHall: Image;
 	private static room: Image;
+	private static exit: Image;
 
 	private static canvas: Canvas;
 	private static defCurs : Cursor;
@@ -22,12 +63,18 @@ class Adv {
 	private static leftCurs : Cursor;
 	private static rightCurs : Cursor;
 	private static inspectCurs: Cursor;
+	private static pointCurs : Cursor;
+
+	private static activeDialogue: Dialogue | null = null;
 
 	private static hallToRoom : Rectangle;
+	private static time: number = 0;
 	
 	static load() {
 		this.hall = new Image("./adv/hall.png")
 		this.room = new Image('./adv/room.png');
+		this.exit = new Image("./adv/exit.png");
+		this.postHall = new Image("./adv/hall-post.png");
 		this.canvas = new Canvas(160, 120);
 
 		this.defCurs = new Cursor("./adv/default-cursor.png");
@@ -36,6 +83,7 @@ class Adv {
 		this.downCurs = new Cursor("./adv/down.png");
 		this.upCurs = new Cursor("./adv/up.png");
 		this.inspectCurs = new Cursor("./adv/inspect.png");
+		this.pointCurs = new Cursor("./adv/point.png");
 
 		Slifer.setCursor(this.defCurs);
 	}
@@ -43,12 +91,23 @@ class Adv {
 	static update() {
 		const room = this.map[this.pos.y][this.pos.x];
 		const mpos = Slifer.Mouse.getPosition();
+		const tx = (Math.floor(mpos.x / 16) - 10);
+		const ty = (Math.floor(mpos.y / 16) - 7);
 
-		Slifer.setCursor(this.defCurs);
+
+		if (mpos.x >= 8 && mpos.x <= 16 && mpos.y >= 8 && mpos.y <= 16) {
+			Slifer.setCursor(this.pointCurs);
+
+			if (Slifer.Mouse.isPressed('left')) {
+				this.activeDialogue = null;
+				Game.state = "terminal";
+			}
+		}
+
 		
 		switch (room) {
 			case 1:
-				if (mpos.x >= 290 && mpos.x <= 330 && mpos.y >= 155 && mpos.y <= 190) {
+				if (tx >= 8 && tx <= 10 && ty >= 2 && ty <= 4) {
 					Slifer.setCursor(this.upCurs);
 					if (Slifer.Mouse.isPressed('left')) {
 						this.pos.y -= 1;
@@ -56,18 +115,55 @@ class Adv {
 				}
 				break;
 			case 2:
-				if (mpos.x >= 286 && mpos.x <= 330 && mpos.y >= 330 && mpos.y <= 360) {
+				if (tx >= 8 && tx <= 10 && ty == 14) {
 					Slifer.setCursor(this.downCurs);
 					if (Slifer.Mouse.isPressed('left')) {
 						this.pos.y += 1;
 					}
 				}
 
-				if (mpos.x >= 176 && mpos.x <= 235 && mpos.y >= 165 && mpos.y <= 224) {
+				// Left bed inspection
+				if (tx >= 1 && tx <= 4 && ty >= 3 && ty <= 6) {
 					Slifer.setCursor(this.inspectCurs);
+
+					if (Slifer.Mouse.isPressed("left")) { 
+						this.activeDialogue = new Dialogue("Where he kept him.");
+						const rf = new File("room", "txt", "");
+						rf.setContent([
+							"TWO KIDS GO MISSING FROM TOWN",
+							"4th August, 1982",
+							" ",
+							"Two kids have seemingly gone missing from town city",
+							"and have yet to be heard from. The police are conducting",
+							"a state wide search in order to find these kids and",
+							"bring them home. "
+						])
+						Game.files.push(rf);
+						this.map[this.pos.y + 1][this.pos.x] = 3;
+					}
 				}
+
+				// Right bed inspection
+				if (tx >= 16 && tx <= 18 && ty >= 3 && ty <= 6) {
+					Slifer.setCursor(this.inspectCurs);
+
+					if (Slifer.Mouse.isPressed("left")) this.activeDialogue = new Dialogue("Where he kept me.");
+				}
+				
 				break;
-		}		
+		}
+
+		if (this.activeDialogue != null) {
+			this.time += Slifer.deltaTime;
+			
+			this.activeDialogue.update();
+
+			if (Math.floor(this.time) >= this.activeDialogue.dialogue.length) {
+				this.activeDialogue = null;
+			}
+		} else {
+			this.time = 0;
+		}
 	}	
 
 	static draw(font: Font) {
@@ -81,7 +177,16 @@ class Adv {
 			case 2:
 				this.canvas.draw(this.room, 0, 0);
 				break;
+			case 3:
+				this.canvas.draw(this.postHall, 0, 0);
+				break;
 		}
+
+		if (this.activeDialogue != null) {
+			this.activeDialogue.draw(font);
+		}
+
+		Slifer.Graphics.draw(this.exit, 8, 8);
 
 
 		Slifer.Graphics.drawEx(this.canvas, (640 - 320) / 2, (480 - 240) / 2, 2, 2);

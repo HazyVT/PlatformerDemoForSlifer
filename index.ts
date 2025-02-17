@@ -5,16 +5,19 @@ import Game from './src/game';
 
 const window = Slifer.createWindow("Game", 640, 480);
 
-const bg = new Color(0, 0, 0, 255);
 export const white = new Color(255, 255, 255, 255);
+export const black = new Color(0, 0, 0, 255);
 const cursor = new Color(65, 65, 65, 255);
 
 const font = new Font("./font.ttf", 12);
+const defCursor = new Cursor("./adv/default-cursor.png");
 
 Adv.load();
 
 while (!Slifer.shouldClose()) {
-	Slifer.Graphics.setBackground(bg);
+	Slifer.Graphics.setBackground(black);
+
+	Slifer.setCursor(defCursor);
 
 	switch (Game.state) {
 		case "terminal":
